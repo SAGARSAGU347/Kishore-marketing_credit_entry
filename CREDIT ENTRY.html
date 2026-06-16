@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kishore Marketing — Bill Entry</title>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --gold:#c9a84c;--gold2:#e8c97a;--gold-dim:#7a6230;
+  --bg:#0e0e0f;--bg2:#141416;--bg3:#1a1a1d;--bg4:#222226;
+  --line:rgba(201,168,76,0.15);--line2:rgba(201,168,76,0.08);
+  --text:#f0ead8;--text2:#9e9680;--text3:#5a5648;
+  --red:#e05454;--green:#4caf7d;
+}
+
+/* ── SCREEN layout ── */
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.7;}
+
+.page{position:relative;z-index:1;width:100%;max-width:960px;margin:0 auto;padding:12px 24px;display:flex;flex-direction:column;height:100vh;gap:8px;}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0;}
+.brand-block{display:flex;align-items:baseline;gap:12px;}
+.brand-name{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;line-height:1;letter-spacing:-0.5px;}
+.brand-name em{font-style:italic;color:var(--gold);}
+.brand-tagline{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);}
+
+/* meta + export row */
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+.meta-cell{background:var(--bg2);padding:8px 12px;display:flex;flex-direction:column;gap:4px;transition:background 0.2s;}
+.meta-cell:focus-within{background:var(--bg3);}
+.meta-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);}
+.meta-inp{font-family:'Syne',sans-serif;font-size:12px;font-weight:600;background:transparent;border:none;outline:none;color:var(--text);width:110px;}
+.meta-inp::placeholder{color:var(--text3);}
+.meta-inp[type="date"]{color-scheme:dark;}
+
+/* export button */
+.export-btn{display:flex;align-items:center;gap:8px;padding:10px 20px;background:transparent;border:1px solid var(--line);border-radius:4px;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all 0.25s;white-space:nowrap;height:100%;}
+.export-btn:hover{border-color:var(--gold-dim);color:var(--gold);box-shadow:0 0 24px rgba(201,168,76,0.1);}
+
+/* ── DIVIDER ── */
+.divider{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.divider-line{flex:1;height:1px;background:var(--line2);}
+.divider-dot{width:4px;height:4px;background:var(--gold);transform:rotate(45deg);opacity:0.5;flex-shrink:0;}
+.divider-text{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);}
+
+/* ── ENTRY PANEL ── */
+.entry-panel{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:14px 20px;flex-shrink:0;position:relative;overflow:hidden;}
+.entry-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0.4;}
+.entry-row{display:grid;grid-template-columns:1fr 180px auto;gap:14px;align-items:flex-end;}
+.field-group{display:flex;flex-direction:column;gap:6px;}
+.field-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);}
+.field-input-wrap{position:relative;}
+.field-inp{font-family:'JetBrains Mono',monospace;font-size:13px;padding:10px 14px;background:var(--bg3);border:1px solid rgba(201,168,76,0.12);border-radius:4px;color:var(--text);width:100%;outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;letter-spacing:0.5px;}
+.field-inp::placeholder{color:var(--text3);}
+.field-inp:focus{border-color:rgba(201,168,76,0.45);background:var(--bg4);box-shadow:0 0 0 3px rgba(201,168,76,0.06);}
+.amount-wrap{position:relative;}
+.amount-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);pointer-events:none;opacity:0.7;}
+.amount-wrap .field-inp{padding-left:26px;}
+.add-btn{height:40px;padding:0 24px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold));background-size:200% 100%;border:none;border-radius:4px;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#0e0e0f;cursor:pointer;transition:background-position 0.3s,transform 0.1s,box-shadow 0.2s;white-space:nowrap;box-shadow:0 0 16px rgba(201,168,76,0.12);}
+.add-btn:hover{background-position:100% 0;box-shadow:0 0 28px rgba(201,168,76,0.28);}
+.add-btn:active{transform:scale(0.97);}
+
+/* ── SUGGESTIONS ── */
+.suggestions{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg4);border:1px solid var(--line);border-radius:4px;z-index:100;display:none;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.6);max-height:160px;overflow-y:auto;}
+.sug-item{padding:9px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:1px solid var(--line2);transition:background 0.1s,color 0.1s;}
+.sug-item:last-child{border-bottom:none;}
+.sug-item:hover,.sug-item.active{background:var(--bg3);color:var(--gold);}
+
+/* ── LEDGER (scrollable area) ── */
+.ledger-wrap{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg2);display:flex;flex-direction:column;flex:1;min-height:0;}
+.ledger-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--line2);background:var(--bg3);flex-shrink:0;}
+.ledger-title{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);}
+.ledger-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);}
+.ledger-count span{color:var(--gold);font-weight:500;}
+.ledger-scroll{overflow-y:auto;flex:1;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--bg3);position:sticky;top:0;z-index:2;}
+th{padding:9px 16px;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);font-weight:400;text-align:left;border-bottom:1px solid var(--line2);}
+th.r{text-align:right;}th.c{text-align:center;}
+td{padding:10px 16px;border-bottom:1px solid var(--line2);vertical-align:middle;font-size:12px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background 0.15s;}
+tbody tr:hover{background:rgba(201,168,76,0.03);}
+.td-no{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);width:40px;}
+.td-inv{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);}
+.td-amt{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--gold2);text-align:right;}
+.td-c{text-align:center;width:48px;}
+.del-btn{background:transparent;border:1px solid rgba(224,84,84,0.2);border-radius:3px;color:rgba(224,84,84,0.35);width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;}
+.del-btn:hover{background:rgba(224,84,84,0.1);border-color:var(--red);color:var(--red);}
+.empty-row td{text-align:center;padding:40px 16px;color:var(--text3);border:none;}
+.empty-icon{font-size:24px;display:block;margin-bottom:8px;opacity:0.25;}
+.empty-text{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;}
+@keyframes rowIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:translateX(0);}}
+.row-anim{animation:rowIn 0.18s ease;}
+
+/* ── FOOTER ── */
+.footer{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;padding:4px 0;}
+.total-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:3px;}
+.total-val{display:flex;align-items:baseline;gap:5px;line-height:1;}
+.total-currency{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);}
+.total-num{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:300;color:var(--text);letter-spacing:-1px;}
+.total-change{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:3px;opacity:0;transition:opacity 0.3s;height:14px;}
+.total-change.show{opacity:1;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── PRINT STYLES ── */
+@media print{
+  /* A4 portrait: printable width = 210mm - 14mm margins = 196mm */
+  @page{size:A4 portrait;margin:8mm 7mm 8mm 7mm;}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{height:auto;overflow:visible;background:#fff !important;}
+  body::before{display:none;}
+  .page{max-width:100%;width:196mm;padding:0;height:auto;gap:5px;display:block;}
+  .topbar{margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+  .export-btn,.add-btn,.del-btn,.entry-panel,.divider{display:none !important;}
+  .brand-name{font-size:20px;color:#111;}
+  .brand-name em{color:#8a6b1e;}
+  .brand-tagline,.meta-lbl{color:#555;}
+  .meta-inp{color:#111;font-size:10px;width:auto;}
+  .meta-grid{border:1px solid #bbb;background:#eee;}
+  .meta-cell{background:#f5f5f5;padding:5px 8px;}
+  .ledger-wrap{border:1px solid #bbb;border-radius:0;display:block;overflow:visible;}
+  .ledger-scroll{overflow:visible;}
+  .ledger-header{background:#f0f0f0;padding:5px 10px;}
+  .ledger-title,.ledger-count{color:#333;}
+
+  /* ── KEY FIX: fixed-layout table with explicit column widths summing to 196mm ── */
+  /* #(10) | Party Invoice(68) | Amount(30) | Cash(30) | CH/PP/GP(52) | Del hidden */
+  table{width:196mm;table-layout:fixed;border-collapse:collapse;font-size:9pt;}
+  col.col-no   {width:10mm;}
+  col.col-inv  {width:68mm;}
+  col.col-amt  {width:30mm;}
+  col.col-cash {width:30mm;}
+  col.col-pay  {width:58mm;}
+  col.col-del  {width:0;display:none;}
+
+  thead tr{background:#e8e8e8 !important;}
+  th{color:#333;padding:5px 4px;font-size:7.5pt;border:1px solid #bbb;overflow:hidden;white-space:nowrap;}
+  td{padding:5px 4px;font-size:9pt;border:1px solid #ddd;color:#111;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .td-no{color:#666;text-align:center;}
+  th.r{text-align:right;}
+  .td-amt{text-align:right;color:#111;}
+  /* Strip rupee from screen-rendered td-amt — the HTML contains ₹ as text node; hide via font trick */
+  .td-amt .rp{display:none;}
+  .td-c,.th-del{display:none !important;width:0 !important;padding:0 !important;border:none !important;}
+  tbody tr:hover{background:transparent;}
+  .footer{margin-top:6px;display:flex;align-items:center;justify-content:space-between;}
+  .total-currency{display:none;}
+  .total-num{color:#111;font-size:20pt;}
+  .total-lbl{color:#555;}
+  .total-change{display:none;}
+  .bottom-rule{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ── TOPBAR: brand + meta + export ── -->
+<div class="topbar">
+  <div class="brand-block">
+    <div>
+      <div class="brand-name"><em>Kishore</em> Marketing</div>
+      <div class="brand-tagline">Bill Entry Ledger</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="meta-grid">
+      <div class="meta-cell">
+        <span class="meta-lbl">Date</span>
+        <input class="meta-inp" type="date" id="km-date">
+      </div>
+      <div class="meta-cell">
+        <span class="meta-lbl">Salesman</span>
+        <input class="meta-inp" type="text" placeholder="Enter name" id="km-salesman">
+      </div>
+      <div class="meta-cell">
+        <span class="meta-lbl">Route</span>
+        <input class="meta-inp" type="text" placeholder="Enter route" id="km-route">
+      </div>
+    </div>
+    <button class="export-btn" id="km-export-btn">
+      <span style="font-size:14px;opacity:0.7">&#8595;</span>
+      Export Excel
+    </button>
+  </div>
+</div>
+
+<!-- ── DIVIDER ── -->
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-dot"></div>
+  <div class="divider-text">New Entry</div>
+  <div class="divider-dot"></div>
+  <div class="divider-line"></div>
+</div>
+
+<!-- ── ENTRY PANEL ── -->
+<div class="entry-panel">
+  <div class="entry-row">
+    <div class="field-group">
+      <label class="field-lbl" for="km-invoice">Party Invoice No.</label>
+      <div class="field-input-wrap">
+        <input class="field-inp" id="km-invoice" placeholder="e.g. INV-2025-001" autocomplete="off">
+        <div class="suggestions" id="km-suggestions"></div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-lbl" for="km-amount">Amount</label>
+      <div class="amount-wrap">
+        <span class="amount-prefix">&#8377;</span>
+        <input class="field-inp" id="km-amount" type="number" placeholder="0.00" step="0.01">
+      </div>
+    </div>
+    <button class="add-btn" id="km-add-btn">+ Add</button>
+  </div>
+</div>
+
+<!-- ── LEDGER ── -->
+<div class="ledger-wrap">
+  <div class="ledger-header">
+    <span class="ledger-title">Ledger Entries</span>
+    <span class="ledger-count"><span id="km-count">0</span> records</span>
+  </div>
+  <div class="ledger-scroll">
+    <table>
+      <colgroup>
+        <col class="col-no">
+        <col class="col-inv">
+        <col class="col-amt">
+        <col class="col-cash">
+        <col class="col-pay">
+        <col class="col-del">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Party Invoice No.</th>
+          <th class="r">Amount</th>
+          <th>Cash</th>
+          <th>CH / PP / GP / Pay</th>
+          <th class="c th-del">Del</th>
+        </tr>
+      </thead>
+      <tbody id="km-tbody">
+        <tr class="empty-row">
+          <td colspan="6">
+            <span class="empty-icon">&#128203;</span>
+            <div class="empty-text">No entries yet &mdash; add one above</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  <div>
+    <div class="total-lbl">Total Amount</div>
+    <div class="total-val">
+      <span class="total-currency">&#8377;</span>
+      <span class="total-num" id="km-total">0.00</span>
+    </div>
+    <div class="total-change" id="km-change"></div>
+  </div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--text3);opacity:0.4;">
+    KISHORE MARKETING &middot; BILL ENTRY SYSTEM
+  </div>
+</div>
+
+</div><!-- .page -->
+
+<script>
+(function(){
+  var invoiceEl=document.getElementById("km-invoice");
+  var amountEl=document.getElementById("km-amount");
+  var sugBox=document.getElementById("km-suggestions");
+  var tbody=document.getElementById("km-tbody");
+  var totalEl=document.getElementById("km-total");
+  var countEl=document.getElementById("km-count");
+  var changeEl=document.getElementById("km-change");
+  var dateEl=document.getElementById("km-date");
+  dateEl.value=new Date().toISOString().split("T")[0];
+  var entries=[];
+  var prevTotal=0;
+  var history=[];
+  try{history=JSON.parse(localStorage.getItem("km-inv-hist")||"[]");}catch(e){}
+  var selIdx=-1;
+
+  function saveHistory(inv){
+    if(!history.includes(inv)){history.unshift(inv);try{localStorage.setItem("km-inv-hist",JSON.stringify(history.slice(0,300)));}catch(e){}}
+  }
+  function showSugg(){
+    var v=invoiceEl.value.trim().toLowerCase();sugBox.innerHTML="";selIdx=-1;
+    if(!v){sugBox.style.display="none";return;}
+    var m=history.filter(function(h){return h.toLowerCase().includes(v);}).slice(0,6);
+    if(!m.length){sugBox.style.display="none";return;}
+    m.forEach(function(item){
+      var d=document.createElement("div");d.className="sug-item";d.textContent=item;
+      d.onmousedown=function(e){e.preventDefault();invoiceEl.value=item;sugBox.style.display="none";amountEl.focus();};
+      sugBox.appendChild(d);
+    });
+    sugBox.style.display="block";
+  }
+  function highlightSugg(){document.querySelectorAll(".sug-item").forEach(function(el,i){el.classList.toggle("active",i===selIdx);});}
+  invoiceEl.addEventListener("input",showSugg);
+  invoiceEl.addEventListener("blur",function(){setTimeout(function(){sugBox.style.display="none";},120);});
+  invoiceEl.addEventListener("keydown",function(e){
+    var items=document.querySelectorAll(".sug-item");
+    if(e.key==="ArrowDown"){e.preventDefault();selIdx=Math.min(selIdx+1,items.length-1);highlightSugg();}
+    else if(e.key==="ArrowUp"){e.preventDefault();selIdx=Math.max(selIdx-1,0);highlightSugg();}
+    else if(e.key==="Enter"){e.preventDefault();if(sugBox.style.display==="block"&&selIdx>=0&&items[selIdx]){invoiceEl.value=items[selIdx].textContent;sugBox.style.display="none";}amountEl.focus();}
+    else if(e.key==="Escape"){sugBox.style.display="none";}
+  });
+  amountEl.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();addEntry();}});
+  document.getElementById("km-add-btn").addEventListener("click",addEntry);
+
+  function addEntry(){
+    var inv=invoiceEl.value.trim();var amt=parseFloat(amountEl.value);
+    if(!inv||isNaN(amt)||amt<=0)return;
+    entries.unshift({id:Date.now(),inv:inv,amt:amt});
+    saveHistory(inv);render();
+    invoiceEl.value="";amountEl.value="";sugBox.style.display="none";invoiceEl.focus();
+  }
+  function deleteEntry(id){entries=entries.filter(function(e){return e.id!==id;});render();}
+  window._kmDel=deleteEntry;
+
+  function fmt(n){return n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+  function render(){
+    countEl.textContent=entries.length;
+    if(!entries.length){
+      tbody.innerHTML="<tr class=\"empty-row\"><td colspan=\"6\"><span class=\"empty-icon\">&#128203;</span><div class=\"empty-text\">No entries yet &mdash; add one above</div></td></tr>";
+      animateTotal(0);return;
+    }
+    var total=0;
+    tbody.innerHTML=entries.map(function(e,i){
+      total+=e.amt;
+      return "<tr class=\"row-anim\"><td class=\"td-no\">"+(i+1<10?"0"+(i+1):i+1)+"</td><td class=\"td-inv\">"+e.inv+"</td><td class=\"td-amt\"><span class=\"rp\">&#8377; </span>"+fmt(e.amt)+"</td><td></td><td></td><td class=\"td-c\"><button class=\"del-btn\" onclick=\"window._kmDel("+e.id+")\" title=\"Delete\">&times;</button></td></tr>";
+    }).join("");
+    animateTotal(total);
+  }
+
+  function animateTotal(newVal){
+    var diff=newVal-prevTotal;
+    if(diff!==0&&entries.length>0){
+      changeEl.innerHTML=(diff>0?"+ ":"- ")+fmt(Math.abs(diff));
+      changeEl.style.color=diff>0?"#4caf7d":"#e05454";
+      changeEl.classList.add("show");
+      clearTimeout(changeEl._t);
+      changeEl._t=setTimeout(function(){changeEl.classList.remove("show");},2200);
+    }else if(newVal===0){changeEl.classList.remove("show");}
+    prevTotal=newVal;totalEl.textContent=fmt(newVal);
+  }
+
+  document.getElementById("km-export-btn").addEventListener("click",async function(){
+    if(!window.ExcelJS){alert("ExcelJS is still loading. Please try again.");return;}
+    var wb=new ExcelJS.Workbook();var ws=wb.addWorksheet("Bill Entry");
+    /* Column widths tuned to fit A4 portrait (approx 96 char units total) */
+    ws.columns=[{width:5},{width:32},{width:14},{width:11},{width:16}];
+    /* A4 page setup — fit all columns to 1 page wide */
+    ws.pageSetup={
+      paperSize:9,orientation:"portrait",
+      fitToPage:true,fitToWidth:1,fitToHeight:0,
+      margins:{left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2}
+    };
+    ws.mergeCells("A1:E1");
+    var tc=ws.getCell("A1");tc.value="KISHORE MARKETING";
+    tc.font={bold:true,italic:true,size:16,color:{argb:"FFC9A84C"}};
+    tc.alignment={horizontal:"center",vertical:"middle"};ws.getRow(1).height=28;
+    var mr=ws.addRow(["",new Date(dateEl.value).toLocaleDateString("en-IN"),document.getElementById("km-salesman").value||"",document.getElementById("km-route").value||"",""]);
+    mr.font={size:10,color:{argb:"FF9e9680"}};mr.height=18;
+    ws.addRow([]);
+    var hr=ws.addRow(["No.","Party Invoice No.","Amount","Cash","CH / PP / GP / Pay"]);
+    hr.height=22;
+    hr.eachCell(function(c){c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF141416"}};c.font={bold:true,color:{argb:"FFC9A84C"},size:10};c.alignment={horizontal:"center",vertical:"middle"};c.border={top:{style:"thin",color:{argb:"FFC9A84C"}},left:{style:"thin",color:{argb:"FFC9A84C"}},bottom:{style:"thin",color:{argb:"FFC9A84C"}},right:{style:"thin",color:{argb:"FFC9A84C"}}};}); 
+    entries.forEach(function(e,i){
+      var r=ws.addRow([i+1,e.inv,e.amt,"",""]);r.height=22;
+      r.getCell(3).numFmt="[$\u20B9]#,##0.00";
+      r.eachCell(function(c){c.border={top:{style:"hair"},left:{style:"hair"},bottom:{style:"hair"},right:{style:"hair"}};c.alignment={vertical:"middle"};});
+      r.getCell(1).alignment={horizontal:"center",vertical:"middle"};
+      if(i%2===1)r.eachCell(function(c){c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFF9F7F2"}};});
+    });
+    var total=entries.reduce(function(s,e){return s+e.amt;},0);
+    var tr2=ws.addRow(["","TOTAL",total,"",""]);tr2.height=26;
+    tr2.getCell(2).font={bold:true,size:12,color:{argb:"FFC9A84C"}};
+    tr2.getCell(3).font={bold:true,size:12};tr2.getCell(3).numFmt="[$\u20B9]#,##0.00";
+    tr2.eachCell(function(c){c.border={top:{style:"medium"},left:{style:"thin"},bottom:{style:"medium"},right:{style:"thin"}};});
+    var buf=await wb.xlsx.writeBuffer();
+    var sal=(document.getElementById("km-salesman").value||"Salesman").trim().replace(/\s+/g,"-");
+    var rte=(document.getElementById("km-route").value||"Route").trim().replace(/\s+/g,"-");
+    saveAs(new Blob([buf]),sal+"_"+rte+".xlsx");
+  });
+})();
+</script>
+</body>
+</html>
